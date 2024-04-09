@@ -13,7 +13,9 @@ let callee =
   | Some callee -> callee
   | None -> raise (Error "unknown function referenced")
 
-let args = [|build_global_stringptr "Hello World!" "strtmp" builder|];;
+let fn = declare_function "main" (function_type (void_type context) [||]) tl_mod
+let bb = append_block context "bb" fn
 
+let args = [|build_global_stringptr "Hello World!" "strtmp" builder|];;
 
 dump_value (build_call printf_type callee args "calltmp" builder)
