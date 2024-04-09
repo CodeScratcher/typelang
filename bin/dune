@@ -1,4 +1,5 @@
 (executable
  (public_name typelang)
  (name main)
- (libraries typelang))
+ (flags -w +32)
+ (libraries typelang llvm))
