@@ -1,4 +1,7 @@
 open Llvm
+open Typelang.Lexer
+open Typelang.Parser
+open Typelang.Ast
 exception Error of string
 
 let context = global_context ()
@@ -20,4 +23,7 @@ let args = [|build_global_string "Hello World!\n" "strtmp" builder|]
 
 let call = build_call printf_type callee args "calltmp" builder;;
 
-dump_module tl_mod
+dump_module tl_mod;;
+
+print_endline (String.concat ", " (List.map printSexpr (parseFromString (read_line ()))))
+

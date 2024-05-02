@@ -2,6 +2,7 @@ type token =
   | Number of string
   | String of string
   | Ident of string
+  | TokenError of string
   | LParen
   | RParen
   | EOF
@@ -14,10 +15,10 @@ let next string = String.sub string 1 (String.length string - 1)
 
 let[@tail_mod_cons] rec tokenize string state = 
   match (string, state) with
-    | ("", EmptyState) -> [Result.Ok EOF]
-    | ("", IdentState x) -> [Result.Ok (Ident x)]
-    | ("", NumberState x) -> [Result.Ok (Number x)]
-    | ("", StringState x) -> [Result.Ok (String x)]
+    | ("", EmptyState) -> [EOF]
+    | ("", IdentState x) -> [Ident x]
+    | ("", NumberState x) -> [Number x]
+    | ("", StringState _) -> [TokenError "Unclosed string"]
     | (_, EmptyState) ->  tokenizeEmptyState string
     | (_, IdentState x) -> tokenizeIdentState string x
     | (_, NumberState x) -> tokenizeNumberState string x
@@ -29,25 +30,25 @@ and[@tail_mod_cons] tokenizeEmptyState string =
       | 'A'..'Z' | 'a'..'z' | '!' | '#'..'&' | '*'..'/' | ':'..'@' | '{'..'~' -> tokenize (next string) (IdentState (String.make 1 char))
       | '0'..'9' -> tokenize (next string) (NumberState (String.make 1 char))
       | '"' -> tokenize (next string) (StringState "") 
-      | '(' -> Result.Ok LParen :: tokenize (next string) EmptyState
-      | ')' -> Result.Ok RParen :: tokenize (next string) EmptyState
+      | '(' -> LParen :: tokenize (next string) EmptyState
+      | ')' -> RParen :: tokenize (next string) EmptyState
       | '\x00'..' ' -> tokenize (next string) EmptyState
-      | _ -> [Result.Error "Invalid token"]
+      | _ -> [TokenError "Invalid token"]
 
 and[@tail_mod_cons] tokenizeIdentState string cur = 
   let char = string.[0] in
     match char with
       | 'A'..'Z' | 'a'..'z' | '!' | '#'..'&' | '*'..'/' | ':'..'@' | '{'..'~' | '0'..'9' -> tokenize (next string) (IdentState (cur ^ (String.make 1 char)))
-      | _ -> Result.Ok (Ident cur) :: tokenize string EmptyState
+      | _ -> Ident cur :: tokenize string EmptyState
 
 and[@tail_mod_cons] tokenizeNumberState string cur = 
   let char = string.[0] in
     match char with 
       | '0'..'9' | '.' | 'f' -> tokenize (next string) (NumberState (cur ^ (String.make 1 char)))
-      | _ -> Result.Ok (Number cur) :: tokenize string EmptyState
+      | _ -> Number cur :: tokenize string EmptyState
 
 and[@tail_mod_cons] tokenizeStringState string cur = 
   let char = string.[0] in
     match char with 
-      | '"' -> Result.Ok (Number cur) :: tokenize string EmptyState
+      | '"' -> String cur :: tokenize (next string) EmptyState
       | _ -> tokenize (next string) (StringState (cur ^ (String.make 1 char)))

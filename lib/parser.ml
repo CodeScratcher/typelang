@@ -19,18 +19,17 @@ let rec parseList tokens = match tokens with
     | LParen -> let parsedList = parseList tail in 
       let parsedTail = parseList (snd parsedList) in 
         (ListExpr (fst parsedList) :: fst parsedTail, snd parsedTail)
-    | Number x -> let parsedTail = parseList tail in (int_parse x "Wrong type" :: fst parsedTail, snd parsedTail)
-    | Ident x -> let parsedTail = parseList tail in (AtomExpr (IdentAtom x) :: fst parsedTail, snd parsedTail)
-    | String x -> let parsedTail = parseList tail in (AtomExpr (StringAtom x) :: fst parsedTail, snd parsedTail)
-    | EOF -> ([ParseError "Unexpected end of file, expecting right parenthesis"], []))
+    | Number _ | Ident _ | String _ -> let parsedTail = parseList tail in (parseAtom head :: fst parsedTail, snd parsedTail)
+    | EOF -> ([ParseError "Unexpected end of file, expecting right parenthesis"], [])
+    | TokenError x -> ([ParseError x], []))
   
 let rec parse tokens = match tokens with
   | [] -> []
   | head :: tail -> (match head with
     | RParen -> [ParseError "Unopened right parenthesis"]
     | LParen -> let parsedList = parseList tail in ListExpr (fst parsedList) :: parse (snd parsedList)
-    | Number x -> int_parse x "Wrong type" :: parse tail
-    | Ident x -> AtomExpr (IdentAtom x) :: parse tail
-    | String x -> AtomExpr (StringAtom x) :: parse tail
+    | Number _ | Ident _ | String _ -> parseAtom head :: parse tail
+    | TokenError x -> [ParseError x]
     | EOF -> [])
 
+let parseFromString str = parse (tokenize str EmptyState)

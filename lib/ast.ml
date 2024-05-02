@@ -14,3 +14,8 @@ type sexpr =
   | AtomExpr of atom
   | ListExpr of sexpr list
   | ParseError of string
+
+let rec printSexpr sexpr = match sexpr with
+  | AtomExpr x -> String.cat "Atom: " (printAtom x)
+  | ListExpr x -> String.concat " " ("List: (" :: (List.append (List.map printSexpr x) [")"]))
+  | ParseError x -> String.cat "Error: " x
